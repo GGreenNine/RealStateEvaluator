@@ -1,0 +1,25 @@
+{
+  "run": {
+    "start_url": "https://asunnot.oikotie.fi/myytavat-asunnot?pagination=1&locations=%5B%5B39,6,%22Espoo%22%5D%5D&cardType=100&buildingType%5B%5D=1&buildingType%5B%5D=256&price%5Bmin%5D=150000&price%5Bmax%5D=250000&size%5Bmin%5D=48",
+    "started_at": "2026-03-15T20:29:27+00:00",
+    "finished_at": "2026-03-15T20:29:45+00:00",
+    "pages_scanned": 0,
+    "listing_urls_found": 0,
+    "records_scraped": 0,
+    "browser_fallback": true,
+    "partial": false
+  },
+  "records": [],
+  "errors": [
+    {
+      "url": "https://asunnot.oikotie.fi/api/search?locations=%5B%5B39%2C6%2C%22Espoo%22%5D%5D&cardType=100&buildingType%5B%5D=1&buildingType%5B%5D=256&price%5Bmin%5D=150000&price%5Bmax%5D=250000&size%5Bmin%5D=48&limit=24&offset=0&sortBy=published_sort_desc",
+      "error": "listing_api_fetch_failed: HTTP 401 for https://asunnot.oikotie.fi/api/search?locations=%5B%5B39%2C6%2C%22Espoo%22%5D%5D&cardType=100&buildingType%5B%5D=1&buildingType%5B%5D=256&price%5Bmin%5D=150000&price%5Bmax%5D=250000&size%5Bmin%5D=48&limit=24&offset=0&sortBy=published_sort_desc",
+      "timestamp": "2026-03-15T20:29:27+00:00"
+    },
+    {
+      "url": "https://asunnot.oikotie.fi/myytavat-asunnot?locations=%5B%5B39%2C6%2C%22Espoo%22%5D%5D&cardType=100&buildingType%5B%5D=1&buildingType%5B%5D=256&price%5Bmin%5D=150000&price%5Bmax%5D=250000&size%5Bmin%5D=48&pagination=1",
+      "error": "listing_page_fetch_failed: Validator rejected browser HTML for https://asunnot.oikotie.fi/myytavat-asunnot?locations=%5B%5B39%2C6%2C%22Espoo%22%5D%5D&cardType=100&buildingType%5B%5D=1&buildingType%5B%5D=256&price%5Bmin%5D=150000&price%5Bmax%5D=250000&size%5Bmin%5D=48&pagination=1",
+      "timestamp": "2026-03-15T20:29:45+00:00"
+    }
+  ]
+}

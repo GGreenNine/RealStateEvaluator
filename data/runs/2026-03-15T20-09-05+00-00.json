@@ -1,0 +1,14 @@
+{
+  "run": {
+    "start_url": "https://asunnot.oikotie.fi/myytavat-asunnot?pagination=1&locations=%5B%5B39,6,%22Espoo%22%5D%5D&cardType=100&buildingType%5B%5D=1&buildingType%5B%5D=256&price%5Bmin%5D=150000&price%5Bmax%5D=250000&size%5Bmin%5D=48",
+    "started_at": "2026-03-15T20:09:05+00:00",
+    "finished_at": "2026-03-15T20:09:06+00:00",
+    "pages_scanned": 1,
+    "listing_urls_found": 0,
+    "records_scraped": 0,
+    "browser_fallback": false,
+    "partial": false
+  },
+  "records": [],
+  "errors": []
+}
