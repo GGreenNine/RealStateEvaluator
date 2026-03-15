@@ -6,7 +6,7 @@ from pathlib import Path
 
 from scraper.config import ScraperConfig
 from scraper.pipeline import OikotieScraper
-from scraper.storage import save_history_snapshot, save_json
+from scraper.storage import save_json, save_run_listing_files
 from scraper.utils import parse_bool, utcnow_iso
 
 
@@ -116,8 +116,8 @@ def main() -> int:
         partial_payload = scraper.build_partial_payload(run_started_at=run_started_at)
         if partial_payload["records"]:
             save_json(config.output_path, partial_payload)
-            save_history_snapshot(config.history_dir, partial_payload)
-            logging.warning("Partial snapshot saved to %s", config.output_path)
+            run_dir = save_run_listing_files(config.history_dir, partial_payload)
+            logging.warning("Partial snapshot saved to %s and %s", config.output_path, run_dir)
         return 130
     except Exception:
         logging.exception("Scraper failed.")
@@ -126,19 +126,19 @@ def main() -> int:
         scraper.close()
 
     save_json(config.output_path, payload)
-    history_path = save_history_snapshot(config.history_dir, payload)
+    run_dir = save_run_listing_files(config.history_dir, payload)
 
     logging.info(
         "Run completed. Saved %s records to %s and %s",
         len(payload["records"]),
         config.output_path,
-        history_path,
+        run_dir,
     )
 
     json.dump(
         {
             "output": str(config.output_path),
-            "history": str(history_path),
+            "history": str(run_dir),
             "records": len(payload["records"]),
             "errors": len(payload.get("errors", [])),
         },
