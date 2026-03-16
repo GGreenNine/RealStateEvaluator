@@ -118,6 +118,12 @@ def normalize_monthly_fee(value: str | None) -> float | None:
     return normalize_decimal(value)
 
 
+def normalize_coordinate(value: str | float | int | None) -> float | None:
+    if value is None:
+        return None
+    return normalize_decimal(str(value))
+
+
 def normalize_listing_id(url: str | None) -> str | None:
     if not url:
         return None

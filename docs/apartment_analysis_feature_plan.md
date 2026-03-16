@@ -51,8 +51,6 @@ Reason:
 These criteria should be scored by the model:
 
 - renovations risk
-- metro proximity estimate
-- nearby amenities estimate
 - commute estimate
 - confidence
 - recommendation
@@ -215,8 +213,6 @@ Input to model:
 
 Model returns:
 - `renovations_score`
-- `metro_proximity_score`
-- `amenities_score`
 - `commute_score`
 - `llm_total_score`
 - `confidence`
@@ -282,19 +278,17 @@ Each scored apartment file should contain:
   },
   "llm_scores": {
     "renovations_score": 2,
-    "metro_proximity_score": 1,
-    "amenities_score": 2,
     "commute_score": 1,
-    "llm_total_score": 6,
+    "llm_total_score": 3,
     "confidence": 0.62,
     "recommendation": "review",
     "summary": "Reasonable fundamentals, but location convenience is uncertain.",
     "reasoning_notes": [
       "Planned repairs look moderate rather than severe.",
-      "Metro access is not clear from the listing."
+      "Commute speed to central Helsinki is not fully clear from the listing."
     ]
   },
-  "final_total_score": 12.5,
+  "final_total_score": 9.5,
   "disqualified": false,
   "disqualification_reason": null,
   "evaluated_at": "2026-03-15T22:00:00+00:00"

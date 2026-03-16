@@ -11,6 +11,16 @@ project_root/
   README.md
   scraper/
     __init__.py
+    poi/
+      __init__.py
+      distance.py
+      models.py
+      repository.py
+      service.py
+      providers/
+        __init__.py
+        base.py
+        digitransit.py
     browser_fallback.py
     client.py
     config.py
@@ -23,6 +33,8 @@ project_root/
     utils.py
   data/
     .gitkeep
+    poi/
+      .gitkeep
 ```
 
 ## Libraries
@@ -54,7 +66,22 @@ pip install playwright
 python -m playwright install chromium
 ```
 
+Optional Digitransit environment example:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+The project reads Digitransit settings from environment variables; `.env.example` is only a reference file and is not loaded automatically.
+
 ## How to run
+
+Current CLI supports subcommands, but old scraper usage still works. These are equivalent:
+
+```powershell
+python main.py scrape --start-url "https://asunnot.oikotie.fi/..."
+python main.py --start-url "https://asunnot.oikotie.fi/..."
+```
 
 Scan up to 30 pages:
 
@@ -80,6 +107,19 @@ Tune delay, timeout and output paths:
 python main.py --start-url "https://asunnot.oikotie.fi/myytavat-asunnot?pagination=1&locations=%5B%5B39,6,%22Espoo%22%5D%5D&cardType=100&buildingType%5B%5D=1&buildingType%5B%5D=256&price%5Bmin%5D=150000&price%5Bmax%5D=250000&size%5Bmin%5D=48" --max-pages 20 --delay 1.5 --timeout 25 --output data/listings_latest.json --state-file data/state.json
 ```
 
+Fetch and store the local metro station dictionary from Digitransit:
+
+```powershell
+python main.py fetch-metro-stations --output data/poi/metro_stations.json
+```
+
+With an explicit Digitransit subscription key:
+
+```powershell
+$env:DIGITRANSIT_SUBSCRIPTION_KEY="your_key"
+python main.py fetch-metro-stations
+```
+
 ## Output files
 
 - `data/listings_latest.json` contains the latest full snapshot.
@@ -101,6 +141,88 @@ data/
       189000 Kyyhkysmäki 1 A.json
       158000 Auringonkatu 8 B.json
 ```
+
+## Local POI data
+
+The scraper now supports a local POI dictionary layer. Metro stations are stored in:
+
+- `data/poi/metro_stations.json`
+
+Example structure:
+
+```json
+{
+  "source": "digitransit_hsl",
+  "object_type": "metro_station",
+  "fetched_at": "2026-03-16T12:34:56+00:00",
+  "count": 17,
+  "items": [
+    {
+      "id": "HSL:1040201",
+      "name": "Kamppi",
+      "lat": 60.169296,
+      "lon": 24.933508,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1040201",
+        "HSL:1040202"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    }
+  ]
+}
+```
+
+The POI layer is intentionally generic. Categories already defined in code:
+
+- `metro_station`
+- `tram_stop`
+- `bus_stop`
+- `rail_station`
+- `shopping_center`
+
+Only `metro_station` is implemented today, but the storage, lookup, and repository code is shared.
+
+## Metro enrichment
+
+Listing coordinates are parsed from the detail page by looking first in JSON-LD `geo.latitude` / `geo.longitude`, then by falling back to raw HTML pattern matching.
+
+When POI enrichment is enabled and `data/poi/metro_stations.json` exists, each listing gets these extra fields:
+
+- `latitude`
+- `longitude`
+- `nearest_metro_station_id`
+- `nearest_metro_station_name`
+- `nearest_metro_distance_meters`
+- `nearest_metro_walking_minutes`
+- `metro_score`
+
+Walking time is estimated from haversine distance:
+
+- `distance_meters = haversine(lat1, lon1, lat2, lon2)`
+- `walking_distance_meters_estimate = distance_meters * walking_detour_factor`
+- `walking_minutes_estimate = walking_distance_meters_estimate / walking_speed_m_per_min`
+
+Default enrichment settings:
+
+- `enable_poi_enrichment = true`
+- `walking_detour_factor = 1.2`
+- `walking_speed_m_per_min = 80`
+
+The metro score is calculated as:
+
+- `minutes < 10` -> `2`
+- `10 <= minutes <= 15` -> `1`
+- `15 < minutes <= 30` -> `0`
+- `minutes > 30` -> `-1`
+
+If coordinates are missing or the metro JSON file does not exist, metro fields stay `null` and the scraper continues.
 
 ## Apartment analysis
 
@@ -198,3 +320,5 @@ That keeps layout changes isolated to one file instead of spreading selector log
 - No async code is used.
 - Logging goes to console.
 - One failed page or listing does not stop the whole run unless `--stop-on-error true` is passed.
+- Metro enrichment is optional and driven by local JSON data under `data/poi/`.
+- To add `tram_stop` or `shopping_center` later, add a provider implementation or data ingester for that category and reuse the same `POIRepository` / `POIService` lookup flow.

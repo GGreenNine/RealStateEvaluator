@@ -27,29 +27,14 @@ Evaluate only these LLM criteria:
   - For buildings older than 1985, sparse repair history or only minor repairs implies elevated medium-term risk
   - Do not give 3 merely because no major repairs are listed; check whether key systems have already been renewed
 
-2. metro_proximity_score
-  - Range: 0 to 3
-  - Goal: estimate whether the apartment is within about a 15-minute walk to metro or similar strong rapid-transit access
-  - Give 3 if clearly very close
-  - Give 2 if likely within about 15 minutes
-  - Give 1 if transit is decent but not clearly rapid-transit-close
-  - Give 0 if not inferable
-
-3. amenities_score
-  - Range: 0 to 2
-  - Goal: estimate whether strong everyday services or a shopping center are likely nearby
-  - Give 2 if clearly strong
-  - Give 1 if somewhat supported
-  - Give 0 if not inferable
-
-4. commute_score
+2. commute_score
   - Range: 0 to 3
   - Goal: estimate whether public transport commute to central Helsinki is about 20 minutes
   - Give 3 for about 20 minutes
   - Deduct 1 point for each additional ~10 minutes
   - Minimum 0
   - If not inferable, return 0
-  - Be conservative: do not assume fast commute unless the listing strongly suggests metro or strong rail access
+  - Be conservative: do not infer commute from metro distance or shopping-center proximity. Those are handled outside the model.
 
 Also provide:
   - confidence: float from 0.0 to 1.0
@@ -65,8 +50,6 @@ Use exactly this schema:
 {
   "listing_id": "string or null",
   "renovations_score": 0,
-  "metro_proximity_score": 0,
-  "amenities_score": 0,
   "commute_score": 0,
   "llm_total_score": 0,
   "confidence": 0.0,
@@ -76,17 +59,17 @@ Use exactly this schema:
     "string"
   ],
   "derived_assumptions": {
-    "estimated_metro_walk_minutes": null,
     "estimated_commute_minutes_to_helsinki_center": null,
     "repair_risk_level": "low|medium|high|unknown"
   }
 }
 
 Rules:
-  - llm_total_score must equal renovations_score + metro_proximity_score + amenities_score + commute_score
+  - llm_total_score must equal renovations_score + commute_score
   - Lower confidence when evidence is weak
   - If confidence is low, still return the best conservative estimate from the JSON
   - Never use external knowledge
+  - Do not score metro proximity or shopping-center proximity. Those are handled outside the model.
   - If renovations_score <= -2, then the final recommendation cannot be shortlisted.
   - If renovations_score = -3, then either reject or hard cap the overall score.
   - recommendation guide:

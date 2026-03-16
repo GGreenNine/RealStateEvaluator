@@ -1,0 +1,548 @@
+{
+  "source": "digitransit_hsl",
+  "object_type": "metro_station",
+  "fetched_at": "2026-03-16T18:11:27+00:00",
+  "count": 30,
+  "items": [
+    {
+      "id": "HSL:2000102",
+      "name": "Aalto-yliopiston metroasema",
+      "lat": 60.1846,
+      "lon": 24.82554,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2222604",
+        "HSL:2222603"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:2000110",
+      "name": "Espoonlahden metroasema",
+      "lat": 60.149251,
+      "lon": 24.654998,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2411601",
+        "HSL:2411602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:2000107",
+      "name": "Finnoon metroasema",
+      "lat": 60.152885,
+      "lon": 24.710134,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2441602",
+        "HSL:2441601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000105",
+      "name": "Hakaniemen metroasema",
+      "lat": 60.180481,
+      "lon": 24.95017,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1111602",
+        "HSL:1111601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000104",
+      "name": "Helsingin yliopiston metroasema",
+      "lat": 60.17202,
+      "lon": 24.94787,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1020604",
+        "HSL:1020603"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000109",
+      "name": "Herttoniemen metroasema",
+      "lat": 60.194813,
+      "lon": 25.030744,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1431602",
+        "HSL:1431601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000111",
+      "name": "Itäkeskuksen metroasema",
+      "lat": 60.210007,
+      "lon": 25.077482,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1453601",
+        "HSL:1453602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:2000108",
+      "name": "Kaitaan metroasema",
+      "lat": 60.149417,
+      "lon": 24.690469,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2441604",
+        "HSL:2441603"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000107",
+      "name": "Kalasataman metroasema",
+      "lat": 60.187477,
+      "lon": 24.97694,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1100602",
+        "HSL:1100601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000102",
+      "name": "Kampin metroasema",
+      "lat": 60.168842,
+      "lon": 24.931199,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1040602",
+        "HSL:1040601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:2000101",
+      "name": "Keilaniemen metroasema",
+      "lat": 60.17496,
+      "lon": 24.82856,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2222601",
+        "HSL:2222602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:2000111",
+      "name": "Kivenlahden metroasema",
+      "lat": 60.155437,
+      "lon": 24.636392,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2413602",
+        "HSL:2413601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000119",
+      "name": "Koivusaaren metroasema",
+      "lat": 60.163642,
+      "lon": 24.854117,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1310604",
+        "HSL:1310603"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000113",
+      "name": "Kontulan metroasema",
+      "lat": 60.235966,
+      "lon": 25.083686,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1473601",
+        "HSL:1473602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000108",
+      "name": "Kulosaaren metroasema",
+      "lat": 60.188844,
+      "lon": 25.008186,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1420601",
+        "HSL:1420602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000118",
+      "name": "Lauttasaaren metroasema",
+      "lat": 60.159396,
+      "lon": 24.878481,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1310602",
+        "HSL:1310601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:2000106",
+      "name": "Matinkylän metroasema",
+      "lat": 60.15947,
+      "lon": 24.73808,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2314601",
+        "HSL:2314602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000114",
+      "name": "Mellunmäen metroasema",
+      "lat": 60.238906,
+      "lon": 25.110201,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1473603",
+        "HSL:1473604"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000112",
+      "name": "Myllypuron metroasema",
+      "lat": 60.225006,
+      "lon": 25.075753,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1454601",
+        "HSL:1454602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:2000105",
+      "name": "Niittykummun metroasema",
+      "lat": 60.17056,
+      "lon": 24.7633,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2214603",
+        "HSL:2214604"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000115",
+      "name": "Puotilan metroasema",
+      "lat": 60.214706,
+      "lon": 25.093076,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1452602",
+        "HSL:1452601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000116",
+      "name": "Rastilan metroasema",
+      "lat": 60.205518,
+      "lon": 25.120666,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1541601",
+        "HSL:1541602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000103",
+      "name": "Rautatientorin metroasema",
+      "lat": 60.170384,
+      "lon": 24.939846,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1020602",
+        "HSL:1020601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000101",
+      "name": "Ruoholahden metroasema",
+      "lat": 60.163202,
+      "lon": 24.915567,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1201602",
+        "HSL:1201601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000110",
+      "name": "Siilitien metroasema",
+      "lat": 60.205684,
+      "lon": 25.044568,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1431604",
+        "HSL:1431603"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:2000109",
+      "name": "Soukan metroasema",
+      "lat": 60.141536,
+      "lon": 24.669855,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2412602",
+        "HSL:2412601"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000106",
+      "name": "Sörnäisten metroasema",
+      "lat": 60.187128,
+      "lon": 24.959696,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1121601",
+        "HSL:1121602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:2000103",
+      "name": "Tapiolan metroasema",
+      "lat": 60.174976,
+      "lon": 24.803486,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2211601",
+        "HSL:2211602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:2000104",
+      "name": "Urheilupuiston metroasema",
+      "lat": 60.174594,
+      "lon": 24.779432,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:2214601",
+        "HSL:2214602"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    },
+    {
+      "id": "HSL:1000117",
+      "name": "Vuosaaren metroasema",
+      "lat": 60.207231,
+      "lon": 25.143072,
+      "category": "metro_station",
+      "source": "digitransit_hsl",
+      "raw_modes": [
+        "SUBWAY"
+      ],
+      "stop_ids": [
+        "HSL:1541603",
+        "HSL:1541604"
+      ],
+      "metadata": {
+        "stop_count": 2
+      }
+    }
+  ]
+}

@@ -31,6 +31,27 @@ def _score_from_bands(value: float | int | None, bands: tuple) -> float:
     return 0.0
 
 
+def _score_maintenance_fee(
+    value: float | int | None,
+    best_fee_threshold: float,
+    worst_fee_threshold: float,
+    max_points: float,
+    min_points: float,
+) -> float:
+    if not isinstance(value, (int, float)):
+        return min_points
+    numeric = float(value)
+    if numeric <= best_fee_threshold:
+        return max_points
+    if numeric >= worst_fee_threshold:
+        return min_points
+    if worst_fee_threshold <= best_fee_threshold:
+        return min_points
+    ratio = (numeric - best_fee_threshold) / (worst_fee_threshold - best_fee_threshold)
+    score = max_points - ratio * (max_points - min_points)
+    return float(score)
+
+
 def _extract_room_count_from_text(value: str | None) -> int | None:
     text = normalize_text(value)
     if not text:
@@ -83,6 +104,7 @@ def build_input_hash(record: Mapping[str, Any], normalized_rooms: int | None) ->
         "price_total_value": record.get("price_total_value"),
         "price_per_m2_value": record.get("price_per_m2_value"),
         "area_m2_value": record.get("area_m2_value"),
+        "maintenance_fee_value": record.get("maintenance_fee_value"),
         "building_year": record.get("building_year"),
         "floor_current": record.get("floor_current"),
         "floor_total": record.get("floor_total"),
@@ -165,6 +187,14 @@ def compute_hard_scores(
         config.hard_scoring.size.bands,
     )
 
+    maintenance_fee_score = _score_maintenance_fee(
+        record.get("maintenance_fee_value"),
+        config.hard_scoring.maintenance_fee.best_fee_threshold,
+        config.hard_scoring.maintenance_fee.worst_fee_threshold,
+        config.hard_scoring.maintenance_fee.max_points,
+        config.hard_scoring.maintenance_fee.min_points,
+    )
+
     floor_current = record.get("floor_current")
     if isinstance(floor_current, int):
         if floor_current == 1:
@@ -182,6 +212,7 @@ def compute_hard_scores(
             + plot_ownership_score
             + price_per_m2_score
             + size_score
+            + maintenance_fee_score
             + floor_score
         )
 
@@ -192,6 +223,7 @@ def compute_hard_scores(
         plot_ownership_score=_round_score(plot_ownership_score),
         price_per_m2_score=_round_score(price_per_m2_score),
         size_score=_round_score(size_score),
+        maintenance_fee_score=_round_score(maintenance_fee_score),
         floor_score=_round_score(floor_score),
         hard_total_score=_round_score(hard_total_score),
         disqualified=disqualified,

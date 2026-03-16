@@ -37,4 +37,9 @@ class ScraperConfig:
     retry_total: int = 3
     retry_backoff_factor: float = 1.0
     retry_statuses: tuple[int, ...] = (403, 429, 500, 502, 503, 504)
+    enable_poi_enrichment: bool = True
+    poi_data_dir: Path = Path("data/poi")
+    metro_data_path: Path = Path("data/poi/metro_stations.json")
+    walking_detour_factor: float = 1.2
+    walking_speed_m_per_min: float = 80.0
     headers: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_HEADERS))

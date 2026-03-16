@@ -40,6 +40,8 @@ class ListingDetails:
     address: str | None = None
     district: str | None = None
     city: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     floor: str | None = None
     floor_raw: str | None = None
     floor_current: int | None = None
@@ -67,6 +69,11 @@ class ListingDetails:
     rooms: str | None = None
     building_type: str | None = None
     seller_name: str | None = None
+    nearest_metro_station_id: str | None = None
+    nearest_metro_station_name: str | None = None
+    nearest_metro_distance_meters: float | None = None
+    nearest_metro_walking_minutes: float | None = None
+    metro_score: int | None = None
     source_start_url: str | None = None
     scraped_at: str | None = None
     parse_error: str | None = None

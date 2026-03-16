@@ -55,8 +55,6 @@ def _zero_llm_score(listing_id: str | None, summary: str) -> LLMScoreResult:
     return LLMScoreResult(
         listing_id=listing_id,
         renovations_score=0.0,
-        metro_proximity_score=0.0,
-        amenities_score=0.0,
         commute_score=0.0,
         llm_total_score=0.0,
         confidence=1.0,
@@ -64,21 +62,24 @@ def _zero_llm_score(listing_id: str | None, summary: str) -> LLMScoreResult:
         summary=summary,
         reasoning_notes=[summary],
         derived_assumptions={
-            "estimated_metro_walk_minutes": None,
             "estimated_commute_minutes_to_helsinki_center": None,
             "repair_risk_level": "unknown",
         },
     )
 
 
-def _existing_score_matches(score_path: Path, input_hash: str) -> bool:
+def _existing_score_matches(score_path: Path, input_hash: str, prompt_version: str) -> bool:
     if not score_path.exists():
         return False
     try:
         payload = json.loads(score_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return False
-    return payload.get("input_hash") == input_hash and not payload.get("llm_error")
+    return (
+        payload.get("input_hash") == input_hash
+        and payload.get("prompt_version") == prompt_version
+        and not payload.get("llm_error")
+    )
 
 
 def main() -> int:
@@ -128,7 +129,7 @@ def main() -> int:
 
         if (
             config.filters.skip_if_already_scored
-            and _existing_score_matches(score_path, derived.input_hash)
+            and _existing_score_matches(score_path, derived.input_hash, config.prompt_version)
         ):
             logging.info("Skipping unchanged scored listing %s", listing_path.name)
             skipped += 1

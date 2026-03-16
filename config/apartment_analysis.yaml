@@ -1,4 +1,4 @@
-version: 1
+version: 2
 
 openai:
   model: "gpt-5-mini"
@@ -91,6 +91,12 @@ hard_scoring:
         max_value: null
         points: 2.5
 
+  maintenance_fee:
+    best_fee_threshold: 200
+    worst_fee_threshold: 400
+    max_points: 1
+    min_points: 0
+
   floor:
     first_floor_points: -1
     other_floors_points: 0
@@ -99,12 +105,6 @@ hard_scoring:
 llm_scoring:
   renovations:
     max_points: 3
-
-  metro_proximity:
-    max_points: 3
-
-  amenities:
-    max_points: 2
 
   commute:
     max_points: 3
@@ -134,11 +134,15 @@ output:
     - "calculated_price_per_m2"
     - "building_year"
     - "rooms"
-    - "room_gate_status"
-    - "hard_review_reason"
+    - "building_age_score"
+    - "plot_ownership_score"
+    - "price_per_m2_score"
+    - "size_score"
+    - "maintenance_fee_score"
     - "floor_score"
+    - "renovations_score"
+    - "commute_score"
     - "llm_skipped_reason"
-    - "recommendation"
     - "confidence"
     - "url"
     - "summary"

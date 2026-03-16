@@ -13,6 +13,7 @@ from .utils import (
     PAGE_MARKER_RE,
     join_non_empty,
     normalize_area,
+    normalize_coordinate,
     normalize_floor,
     normalize_land_ownership,
     normalize_listing_id,
@@ -24,6 +25,22 @@ from .utils import (
 )
 
 LOGGER = logging.getLogger(__name__)
+LATITUDE_HTML_RE = re.compile(
+    r'"latitude"\s*:\s*"?(?P<value>-?\d+(?:\.\d+)?)"?',
+    re.IGNORECASE,
+)
+LONGITUDE_HTML_RE = re.compile(
+    r'"longitude"\s*:\s*"?(?P<value>-?\d+(?:\.\d+)?)"?',
+    re.IGNORECASE,
+)
+DOT_LATITUDE_HTML_RE = re.compile(
+    r"geo\.latitude['\"]?\s*[:=]\s*['\"]?(?P<value>-?\d+(?:\.\d+)?)",
+    re.IGNORECASE,
+)
+DOT_LONGITUDE_HTML_RE = re.compile(
+    r"geo\.longitude['\"]?\s*[:=]\s*['\"]?(?P<value>-?\d+(?:\.\d+)?)",
+    re.IGNORECASE,
+)
 
 CARD_SELECTORS = {
     "container": (
@@ -404,6 +421,36 @@ def pick_json_ld_value(candidates: list[dict[str, Any]], *keys: str) -> Any:
     return None
 
 
+def extract_coordinates_from_json_ld(
+    candidates: list[dict[str, Any]],
+) -> tuple[float | None, float | None]:
+    for candidate in candidates:
+        geo = candidate.get("geo")
+        if not isinstance(geo, dict):
+            continue
+        latitude = normalize_coordinate(geo.get("latitude"))
+        longitude = normalize_coordinate(geo.get("longitude"))
+        if latitude is not None and longitude is not None:
+            return latitude, longitude
+    return None, None
+
+
+def extract_coordinates_from_html(html: str) -> tuple[float | None, float | None]:
+    latitude_match = LATITUDE_HTML_RE.search(html) or DOT_LATITUDE_HTML_RE.search(html)
+    longitude_match = LONGITUDE_HTML_RE.search(html) or DOT_LONGITUDE_HTML_RE.search(html)
+    latitude = (
+        normalize_coordinate(latitude_match.group("value"))
+        if latitude_match
+        else None
+    )
+    longitude = (
+        normalize_coordinate(longitude_match.group("value"))
+        if longitude_match
+        else None
+    )
+    return latitude, longitude
+
+
 def infer_city_from_address(address: str | None, title: str | None) -> str | None:
     source = address or title
     text = normalize_text(source)
@@ -501,6 +548,9 @@ def parse_listing_details(
 
     city = city or infer_city_from_address(address, title)
     district = district or infer_district_from_title(title)
+    latitude, longitude = extract_coordinates_from_json_ld(json_ld)
+    if latitude is None or longitude is None:
+        latitude, longitude = extract_coordinates_from_html(html)
     floor_current, floor_total = normalize_floor(floor_raw)
 
     building_year = None
@@ -525,6 +575,8 @@ def parse_listing_details(
         address=address,
         district=district,
         city=city,
+        latitude=latitude,
+        longitude=longitude,
         floor=floor_raw,
         floor_raw=floor_raw,
         floor_current=floor_current,

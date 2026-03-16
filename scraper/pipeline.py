@@ -16,6 +16,7 @@ from .parsers import (
     parse_listing_details,
     parse_total_pages,
 )
+from .poi import POICategory, POIRepository, POIService, score_metro_walking_minutes
 from .state import apply_state, load_state, save_state
 from .storage import save_text
 from .utils import utcnow_iso
@@ -27,6 +28,11 @@ class OikotieScraper:
     def __init__(self, config: ScraperConfig) -> None:
         self.config = config
         self.client = HttpClient(config)
+        self.poi_service = POIService(
+            repository=POIRepository(config.poi_data_dir),
+            walking_detour_factor=config.walking_detour_factor,
+            walking_speed_m_per_min=config.walking_speed_m_per_min,
+        )
         self._records: list[ListingRecord] = []
         self._errors: list[dict[str, str]] = []
         self._pages_scanned = 0
@@ -260,6 +266,7 @@ class OikotieScraper:
                     card=card,
                 )
                 record = ListingRecord(**details.to_dict(), card=card.to_dict())
+                self._enrich_record_with_metro(record)
                 records.append(record)
             except Exception as exc:
                 self._register_error(card.url, f"listing_parse_failed: {exc}")
@@ -287,6 +294,30 @@ class OikotieScraper:
                 records.append(fallback_record)
 
         return records
+
+    def _enrich_record_with_metro(self, record: ListingRecord) -> None:
+        if not self.config.enable_poi_enrichment:
+            return
+
+        nearest_metro = self.poi_service.find_nearest_poi(
+            lat=record.latitude,
+            lon=record.longitude,
+            category=POICategory.METRO_STATION,
+            path=self.config.metro_data_path,
+        )
+        if nearest_metro is None:
+            return
+
+        record.nearest_metro_station_id = nearest_metro.poi.id
+        record.nearest_metro_station_name = nearest_metro.poi.name
+        record.nearest_metro_distance_meters = round(nearest_metro.distance_meters, 1)
+        record.nearest_metro_walking_minutes = round(
+            nearest_metro.walking_minutes_estimate,
+            1,
+        )
+        record.metro_score = score_metro_walking_minutes(
+            nearest_metro.walking_minutes_estimate
+        )
 
     def _register_error(self, url: str, message: str) -> None:
         LOGGER.error("%s | %s", url, message)

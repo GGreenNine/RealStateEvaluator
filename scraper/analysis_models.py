@@ -22,6 +22,7 @@ class HardScoreResult:
     plot_ownership_score: float
     price_per_m2_score: float
     size_score: float
+    maintenance_fee_score: float
     floor_score: float
     hard_total_score: float
     disqualified: bool
@@ -36,8 +37,6 @@ class HardScoreResult:
 class LLMScoreResult:
     listing_id: str | None
     renovations_score: float
-    metro_proximity_score: float
-    amenities_score: float
     commute_score: float
     llm_total_score: float
     confidence: float

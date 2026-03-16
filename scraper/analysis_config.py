@@ -82,12 +82,21 @@ class FloorConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class MaintenanceFeeConfig:
+    best_fee_threshold: float
+    worst_fee_threshold: float
+    max_points: float
+    min_points: float
+
+
+@dataclass(frozen=True, slots=True)
 class HardScoringConfig:
     room_gate: RoomGateConfig
     building_age: BuildingAgeConfig
     plot_ownership: PlotOwnershipConfig
     price_per_m2: PricePerM2Config
     size: SizeConfig
+    maintenance_fee: MaintenanceFeeConfig
     floor: FloorConfig
 
 
@@ -111,8 +120,6 @@ class ConfidenceConfig:
 @dataclass(frozen=True, slots=True)
 class LLMScoringConfig:
     renovations: SimpleMaxPointsConfig
-    metro_proximity: SimpleMaxPointsConfig
-    amenities: SimpleMaxPointsConfig
     commute: CommuteConfig
     confidence: ConfidenceConfig
 
@@ -243,6 +250,12 @@ def load_apartment_analysis_config(
             size=SizeConfig(
                 bands=_load_score_bands(hard_raw["size"]["bands"]),
             ),
+            maintenance_fee=MaintenanceFeeConfig(
+                best_fee_threshold=float(hard_raw["maintenance_fee"]["best_fee_threshold"]),
+                worst_fee_threshold=float(hard_raw["maintenance_fee"]["worst_fee_threshold"]),
+                max_points=float(hard_raw["maintenance_fee"]["max_points"]),
+                min_points=float(hard_raw["maintenance_fee"]["min_points"]),
+            ),
             floor=FloorConfig(
                 first_floor_points=float(hard_raw["floor"]["first_floor_points"]),
                 other_floors_points=float(hard_raw["floor"]["other_floors_points"]),
@@ -252,12 +265,6 @@ def load_apartment_analysis_config(
         llm_scoring=LLMScoringConfig(
             renovations=SimpleMaxPointsConfig(
                 max_points=float(llm_raw["renovations"]["max_points"])
-            ),
-            metro_proximity=SimpleMaxPointsConfig(
-                max_points=float(llm_raw["metro_proximity"]["max_points"])
-            ),
-            amenities=SimpleMaxPointsConfig(
-                max_points=float(llm_raw["amenities"]["max_points"])
             ),
             commute=CommuteConfig(
                 max_points=float(llm_raw["commute"]["max_points"]),

@@ -3,14 +3,20 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 from .utils import ensure_dir, ensure_parent_dir
 
 
-def save_json(path: Path, payload: dict) -> None:
+def save_json(path: Path, payload: Any) -> None:
     ensure_parent_dir(path)
     with path.open("w", encoding="utf-8") as file:
         json.dump(payload, file, ensure_ascii=False, indent=2)
+
+
+def load_json(path: Path) -> Any:
+    with path.open("r", encoding="utf-8") as file:
+        return json.load(file)
 
 
 def save_history_snapshot(history_dir: Path, payload: dict) -> Path:

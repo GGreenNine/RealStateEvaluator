@@ -19,7 +19,6 @@ class LLMScoringError(RuntimeError):
 
 
 class LLMDerivedAssumptions(BaseModel):
-    estimated_metro_walk_minutes: float | None
     estimated_commute_minutes_to_helsinki_center: float | None
     repair_risk_level: str
 
@@ -27,8 +26,6 @@ class LLMDerivedAssumptions(BaseModel):
 class LLMScorePayload(BaseModel):
     listing_id: str | None
     renovations_score: float
-    metro_proximity_score: float
-    amenities_score: float
     commute_score: float
     llm_total_score: float
     confidence: float
@@ -53,16 +50,6 @@ def _validate_payload(payload: Mapping[str, Any], config: ApartmentAnalysisConfi
         payload.get("renovations_score"),
         config.llm_scoring.renovations.max_points,
     )
-    metro_proximity_score = _validate_score(
-        "metro_proximity_score",
-        payload.get("metro_proximity_score"),
-        config.llm_scoring.metro_proximity.max_points,
-    )
-    amenities_score = _validate_score(
-        "amenities_score",
-        payload.get("amenities_score"),
-        config.llm_scoring.amenities.max_points,
-    )
     commute_score = _validate_score(
         "commute_score",
         payload.get("commute_score"),
@@ -70,7 +57,7 @@ def _validate_payload(payload: Mapping[str, Any], config: ApartmentAnalysisConfi
     )
 
     llm_total_score = round(
-        renovations_score + metro_proximity_score + amenities_score + commute_score,
+        renovations_score + commute_score,
         2,
     )
     returned_total = payload.get("llm_total_score")
@@ -107,8 +94,6 @@ def _validate_payload(payload: Mapping[str, Any], config: ApartmentAnalysisConfi
     return LLMScoreResult(
         listing_id=payload.get("listing_id"),
         renovations_score=renovations_score,
-        metro_proximity_score=metro_proximity_score,
-        amenities_score=amenities_score,
         commute_score=commute_score,
         llm_total_score=llm_total_score,
         confidence=confidence_value,
