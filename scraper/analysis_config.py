@@ -75,12 +75,20 @@ class SizeConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class FloorConfig:
+    first_floor_points: float
+    other_floors_points: float
+    unknown_floor_points: float
+
+
+@dataclass(frozen=True, slots=True)
 class HardScoringConfig:
     room_gate: RoomGateConfig
     building_age: BuildingAgeConfig
     plot_ownership: PlotOwnershipConfig
     price_per_m2: PricePerM2Config
     size: SizeConfig
+    floor: FloorConfig
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,6 +242,11 @@ def load_apartment_analysis_config(
             ),
             size=SizeConfig(
                 bands=_load_score_bands(hard_raw["size"]["bands"]),
+            ),
+            floor=FloorConfig(
+                first_floor_points=float(hard_raw["floor"]["first_floor_points"]),
+                other_floors_points=float(hard_raw["floor"]["other_floors_points"]),
+                unknown_floor_points=float(hard_raw["floor"]["unknown_floor_points"]),
             ),
         ),
         llm_scoring=LLMScoringConfig(

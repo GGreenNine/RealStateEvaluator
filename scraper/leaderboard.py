@@ -62,6 +62,7 @@ def build_leaderboard_rows(
             "rooms": derived.get("normalized_rooms") or listing.get("rooms"),
             "room_gate_status": hard_scores.get("room_gate_status"),
             "hard_review_reason": hard_scores.get("review_reason"),
+            "floor_score": hard_scores.get("floor_score"),
             "llm_skipped_reason": record.get("llm_skipped_reason"),
             "recommendation": llm_scores.get("recommendation"),
             "confidence": llm_scores.get("confidence"),

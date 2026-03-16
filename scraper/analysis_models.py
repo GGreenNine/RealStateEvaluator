@@ -22,6 +22,7 @@ class HardScoreResult:
     plot_ownership_score: float
     price_per_m2_score: float
     size_score: float
+    floor_score: float
     hard_total_score: float
     disqualified: bool
     disqualification_reason: str | None = None

@@ -91,6 +91,11 @@ hard_scoring:
         max_value: null
         points: 2.5
 
+  floor:
+    first_floor_points: -1
+    other_floors_points: 0
+    unknown_floor_points: 0
+
 llm_scoring:
   renovations:
     max_points: 3
@@ -131,6 +136,7 @@ output:
     - "rooms"
     - "room_gate_status"
     - "hard_review_reason"
+    - "floor_score"
     - "llm_skipped_reason"
     - "recommendation"
     - "confidence"

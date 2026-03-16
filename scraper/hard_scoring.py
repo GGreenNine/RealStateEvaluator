@@ -84,6 +84,8 @@ def build_input_hash(record: Mapping[str, Any], normalized_rooms: int | None) ->
         "price_per_m2_value": record.get("price_per_m2_value"),
         "area_m2_value": record.get("area_m2_value"),
         "building_year": record.get("building_year"),
+        "floor_current": record.get("floor_current"),
+        "floor_total": record.get("floor_total"),
         "planned_repairs": record.get("planned_repairs"),
         "completed_repairs": record.get("completed_repairs"),
         "land_ownership_normalized": record.get("land_ownership_normalized"),
@@ -163,6 +165,15 @@ def compute_hard_scores(
         config.hard_scoring.size.bands,
     )
 
+    floor_current = record.get("floor_current")
+    if isinstance(floor_current, int):
+        if floor_current == 1:
+            floor_score = config.hard_scoring.floor.first_floor_points
+        else:
+            floor_score = config.hard_scoring.floor.other_floors_points
+    else:
+        floor_score = config.hard_scoring.floor.unknown_floor_points
+
     if disqualified:
         hard_total_score = room_gate_cfg.fail_score
     else:
@@ -171,6 +182,7 @@ def compute_hard_scores(
             + plot_ownership_score
             + price_per_m2_score
             + size_score
+            + floor_score
         )
 
     result = HardScoreResult(
@@ -180,6 +192,7 @@ def compute_hard_scores(
         plot_ownership_score=_round_score(plot_ownership_score),
         price_per_m2_score=_round_score(price_per_m2_score),
         size_score=_round_score(size_score),
+        floor_score=_round_score(floor_score),
         hard_total_score=_round_score(hard_total_score),
         disqualified=disqualified,
         disqualification_reason=disqualification_reason,

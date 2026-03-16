@@ -151,6 +151,25 @@ def find_value_near_label(soup: BeautifulSoup, labels: list[str]) -> str | None:
     return None
 
 
+def find_info_table_value(soup: BeautifulSoup, labels: list[str]) -> str | None:
+    normalized_labels = {normalize_text(label).lower() for label in labels if normalize_text(label)}
+    if not normalized_labels:
+        return None
+
+    for row in soup.select(".info-table__row"):
+        if not isinstance(row, Tag):
+            continue
+        title_node = row.select_one(".info-table__title")
+        value_node = row.select_one(".info-table__value")
+        title = extract_text_or_none(title_node if isinstance(title_node, Tag) else None)
+        if not title or title.lower() not in normalized_labels:
+            continue
+        value = extract_html_text_or_none(value_node if isinstance(value_node, Tag) else None)
+        if value:
+            return value
+    return None
+
+
 def parse_total_pages(html: str) -> int | None:
     soup = make_soup(html)
     text = extract_html_text_or_none(soup.select_one(".search-result-controls")) or ""
@@ -422,6 +441,9 @@ def parse_listing_details(
         if value:
             return value
         value = extract_field_by_data_name(soup, name)
+        if value:
+            return value
+        value = find_info_table_value(soup, LABEL_FALLBACKS.get(name, []))
         if value:
             return value
         value = find_value_near_label(soup, LABEL_FALLBACKS.get(name, []))
