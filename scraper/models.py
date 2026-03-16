@@ -45,6 +45,7 @@ class ListingDetails:
     floor_current: int | None = None
     floor_total: int | None = None
     building_year: int | None = None
+    listing_overview: str | None = None
     description: str | None = None
     planned_repairs: str | None = None
     completed_repairs: str | None = None

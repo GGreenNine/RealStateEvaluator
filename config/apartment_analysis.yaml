@@ -1,0 +1,143 @@
+version: 1
+
+openai:
+  model: "gpt-5-mini"
+  temperature: 0.1
+  max_output_tokens: 2400
+  timeout_seconds: 60
+  retries: 3
+  prompt_path: "prompts/apartment_llm_scoring_prompt.txt"
+
+paths:
+  run_input_glob: "data/runs/*/*.json"
+  scored_dir_name: "scored"
+  llm_payload_dir_name: "llm_payloads"
+  leaderboard_csv_name: "leaderboard.csv"
+  leaderboard_json_name: "leaderboard.json"
+
+filters:
+  min_rooms: 2
+  reject_parse_error: false
+  skip_if_already_scored: true
+  min_hard_score_for_llm: 4
+
+hard_scoring:
+  room_gate:
+    enabled: true
+    min_rooms: 2
+    fail_score: 0
+    disqualify_below_min_rooms: true
+    unknown_rooms_action: "review"
+
+  building_age:
+    bands:
+      - min_value: 2010
+        max_value: null
+        points: 3
+      - min_value: 2000
+        max_value: 2009
+        points: 2.5
+      - min_value: 1994
+        max_value: 1999
+        points: 2
+      - min_value: 1985
+        max_value: 1993
+        points: 1
+      - min_value: 1970
+        max_value: 1984
+        points: 0
+      - min_value: null
+        max_value: 1969
+        points: -1
+
+  plot_ownership:
+    owned_points: 2
+    leased_points: 0
+    unknown_points: 0
+
+  price_per_m2:
+    bands:
+      - min_value: null
+        max_value: 2600
+        points: 3
+      - min_value: 2600.01
+        max_value: 3000
+        points: 2
+      - min_value: 3000.01
+        max_value: 3400
+        points: 1
+      - min_value: 3400.01
+        max_value: 3800
+        points: 0
+      - min_value: 3800.01
+        max_value: null
+        points: -1
+
+  size:
+    bands:
+      - min_value: null
+        max_value: 45.99
+        points: 0
+      - min_value: 46
+        max_value: 55
+        points: 1
+      - min_value: 56
+        max_value: 65
+        points: 1.5
+      - min_value: 66
+        max_value: 80
+        points: 2
+      - min_value: 80.01
+        max_value: null
+        points: 2.5
+
+llm_scoring:
+  renovations:
+    max_points: 3
+
+  metro_proximity:
+    max_points: 3
+
+  amenities:
+    max_points: 2
+
+  commute:
+    max_points: 3
+    penalty_per_extra_10_minutes: 1
+
+  confidence:
+    min_allowed: 0.0
+    warn_below: 0.45
+
+llm_input:
+  preserve_full_text: true
+
+output:
+  primary_leaderboard_format: "csv"
+  also_write_json: true
+  include_columns:
+    - "rank"
+    - "final_total_score"
+    - "hard_total_score"
+    - "llm_total_score"
+    - "listing_id"
+    - "address"
+    - "district"
+    - "city"
+    - "price_total_value"
+    - "area_m2_value"
+    - "calculated_price_per_m2"
+    - "building_year"
+    - "rooms"
+    - "room_gate_status"
+    - "hard_review_reason"
+    - "llm_skipped_reason"
+    - "recommendation"
+    - "confidence"
+    - "url"
+    - "summary"
+
+metadata:
+  save_input_hash: true
+  save_prompt_version: true
+  save_model_name: true

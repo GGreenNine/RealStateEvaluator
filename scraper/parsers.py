@@ -55,6 +55,7 @@ DETAIL_SELECTORS: dict[str, list[str]] = {
         ".listing-building-year",
         '.field[data-name="building_year"] .field-value',
     ],
+    "listing_overview": [".listing-overview"],
     "building_type": [".listing-building-type"],
     "description": [".listing-description"],
     "planned_repairs": ['.field[data-name="planned_repairs"] .field-value'],
@@ -445,6 +446,7 @@ def parse_listing_details(
     city = field("city")
     floor_raw = field("floor")
     building_year_raw = field("building_year")
+    listing_overview = field("listing_overview")
     description = field("description")
     planned_repairs = field("planned_repairs")
     completed_repairs = field("completed_repairs")
@@ -506,6 +508,7 @@ def parse_listing_details(
         floor_current=floor_current,
         floor_total=floor_total,
         building_year=building_year,
+        listing_overview=listing_overview,
         description=description,
         planned_repairs=planned_repairs,
         completed_repairs=completed_repairs,

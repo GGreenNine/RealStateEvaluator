@@ -83,10 +83,59 @@ python main.py --start-url "https://asunnot.oikotie.fi/myytavat-asunnot?paginati
 ## Output files
 
 - `data/listings_latest.json` contains the latest full snapshot.
-- `data/runs/<timestamp>.json` contains a per-run historical snapshot.
+- `data/runs/<timestamp>/` is created for every scraper run.
+- `data/runs/<timestamp>/_run.json` contains the full per-run snapshot.
+- `data/runs/<timestamp>/<price> <address>.json` contains one apartment per file.
 - `data/state.json` stores cross-run state used to detect new listings and price changes.
 
 All JSON is written in UTF-8 with `ensure_ascii=False` and `indent=2`.
+
+Example:
+
+```text
+data/
+  listings_latest.json
+  runs/
+    2026-03-15T20-29-27+00-00/
+      _run.json
+      189000 Kyyhkysmäki 1 A.json
+      158000 Auringonkatu 8 B.json
+```
+
+## Apartment analysis
+
+Apartment analysis is a separate stage from scraping:
+
+- `config/apartment_analysis.yaml` holds hard-score thresholds, output names, and OpenAI settings.
+- `prompts/apartment_llm_scoring_prompt.txt` holds the fixed prompt for soft scoring.
+- By default, the analysis config uses `gpt-5-mini` to reduce LLM cost for per-listing scoring.
+- The LLM payload is reduced by field selection only; selected text fields are preserved in full without truncation.
+- By default, the LLM stage runs only for listings with `hard_total_score >= 4`.
+
+Set the API key in PowerShell:
+
+```powershell
+$env:OPENAI_API_KEY="your_api_key"
+```
+
+Evaluate one scraped run directory and build the leaderboard:
+
+```powershell
+python evaluate_run.py --run-dir "data/runs/2026-03-15T21 15 13+00 00" --build-leaderboard
+```
+
+Rebuild the leaderboard later without rescoring:
+
+```powershell
+python build_leaderboard.py --run-dir "data/runs/2026-03-15T21 15 13+00 00"
+```
+
+Analysis outputs:
+
+- `data/runs/<timestamp>/scored/*.score.json` stores one scored apartment per file.
+- `data/runs/<timestamp>/llm_payloads/*.llm-input.json` stores the reduced payload sent to the LLM plus field-length metadata for review.
+- `data/runs/<timestamp>/leaderboard.csv` stores the ranking for Excel and Google Sheets.
+- `data/runs/<timestamp>/leaderboard.json` stores the same ranking in structured JSON.
 
 ## How state works
 
