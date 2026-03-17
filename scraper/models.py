@@ -74,6 +74,16 @@ class ListingDetails:
     nearest_metro_distance_meters: float | None = None
     nearest_metro_walking_minutes: float | None = None
     metro_score: int | None = None
+    nearest_tram_stop_id: str | None = None
+    nearest_tram_stop_name: str | None = None
+    nearest_tram_stop_distance_meters: float | None = None
+    nearest_tram_stop_walking_minutes: float | None = None
+    tram_score: int | None = None
+    nearest_rail_station_id: str | None = None
+    nearest_rail_station_name: str | None = None
+    nearest_rail_station_distance_meters: float | None = None
+    nearest_rail_station_walking_minutes: float | None = None
+    rail_score: int | None = None
     source_start_url: str | None = None
     scraped_at: str | None = None
     parse_error: str | None = None

@@ -5,7 +5,7 @@ import json
 import re
 from typing import Any, Mapping
 
-from .analysis_config import ApartmentAnalysisConfig
+from .analysis_config import ApartmentAnalysisConfig, ScoreAnchorConfig
 from .analysis_models import DerivedAnalysisFields, HardScoreResult
 from .utils import normalize_land_ownership, normalize_text
 
@@ -18,38 +18,56 @@ def _round_score(value: float) -> float:
     return round(value, 2)
 
 
-def _score_from_bands(value: float | int | None, bands: tuple) -> float:
+def _interpolate_score(
+    value: float | int | None,
+    anchors: tuple[ScoreAnchorConfig, ...],
+    below_first_points: float | None = None,
+) -> float:
     if not isinstance(value, (int, float)):
+        return 0.0
+    if not anchors:
         return 0.0
 
     numeric = float(value)
-    for band in bands:
-        min_ok = band.min_value is None or numeric >= band.min_value
-        max_ok = band.max_value is None or numeric <= band.max_value
-        if min_ok and max_ok:
-            return float(band.points)
-    return 0.0
+    first = anchors[0]
+    last = anchors[-1]
+
+    if numeric < first.value:
+        return float(below_first_points if below_first_points is not None else first.points)
+    if numeric == first.value:
+        return float(first.points)
+    if numeric >= last.value:
+        return float(last.points)
+
+    for left, right in zip(anchors, anchors[1:]):
+        if numeric == right.value:
+            return float(right.points)
+        if left.value <= numeric <= right.value:
+            if right.value == left.value:
+                return float(right.points)
+            ratio = (numeric - left.value) / (right.value - left.value)
+            return float(left.points + ratio * (right.points - left.points))
+    return float(last.points)
 
 
-def _score_maintenance_fee(
+def _score_maintenance_fee_per_m2(
     value: float | int | None,
-    best_fee_threshold: float,
-    worst_fee_threshold: float,
+    best_fee_per_m2: float,
+    worst_fee_per_m2: float,
     max_points: float,
     min_points: float,
 ) -> float:
     if not isinstance(value, (int, float)):
         return min_points
     numeric = float(value)
-    if numeric <= best_fee_threshold:
+    if numeric <= best_fee_per_m2:
         return max_points
-    if numeric >= worst_fee_threshold:
+    if numeric >= worst_fee_per_m2:
         return min_points
-    if worst_fee_threshold <= best_fee_threshold:
+    if worst_fee_per_m2 <= best_fee_per_m2:
         return min_points
-    ratio = (numeric - best_fee_threshold) / (worst_fee_threshold - best_fee_threshold)
-    score = max_points - ratio * (max_points - min_points)
-    return float(score)
+    ratio = (numeric - best_fee_per_m2) / (worst_fee_per_m2 - best_fee_per_m2)
+    return float(max_points - ratio * (max_points - min_points))
 
 
 def _extract_room_count_from_text(value: str | None) -> int | None:
@@ -97,6 +115,22 @@ def calculate_price_per_m2(record: Mapping[str, Any]) -> float | None:
     return round(float(price_total) / float(area), 2)
 
 
+def calculate_maintenance_fee_per_m2(record: Mapping[str, Any]) -> float | None:
+    maintenance_fee = record.get("maintenance_fee_value")
+    area = record.get("area_m2_value")
+    if not isinstance(maintenance_fee, (int, float)) or not isinstance(area, (int, float)):
+        return None
+    if area <= 0:
+        return None
+    return round(float(maintenance_fee) / float(area), 3)
+
+
+def _normalized_transit_mode_score(value: Any) -> float:
+    if isinstance(value, (int, float)):
+        return float(value)
+    return 0.0
+
+
 def build_input_hash(record: Mapping[str, Any], normalized_rooms: int | None) -> str:
     payload = {
         "listing_id": record.get("listing_id"),
@@ -119,6 +153,9 @@ def build_input_hash(record: Mapping[str, Any], normalized_rooms: int | None) ->
         "city": record.get("city"),
         "description": record.get("description"),
         "title": record.get("title"),
+        "metro_score": record.get("metro_score"),
+        "tram_score": record.get("tram_score"),
+        "rail_score": record.get("rail_score"),
     }
     serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
@@ -130,11 +167,13 @@ def compute_hard_scores(
 ) -> tuple[DerivedAnalysisFields, HardScoreResult]:
     normalized_rooms = normalize_room_count(record)
     calculated_price_per_m2 = calculate_price_per_m2(record)
+    maintenance_fee_per_m2 = calculate_maintenance_fee_per_m2(record)
     input_hash = build_input_hash(record, normalized_rooms)
 
     derived = DerivedAnalysisFields(
         normalized_rooms=normalized_rooms,
         calculated_price_per_m2=calculated_price_per_m2,
+        maintenance_fee_per_m2=maintenance_fee_per_m2,
         input_hash=input_hash,
     )
 
@@ -162,9 +201,9 @@ def compute_hard_scores(
                 disqualified = True
                 disqualification_reason = "room_count_below_minimum"
 
-    building_age_score = _score_from_bands(
+    building_age_score = _interpolate_score(
         record.get("building_year"),
-        config.hard_scoring.building_age.bands,
+        config.hard_scoring.building_age.anchors,
     )
 
     land_ownership = record.get("land_ownership_normalized")
@@ -177,23 +216,40 @@ def compute_hard_scores(
     else:
         plot_ownership_score = config.hard_scoring.plot_ownership.unknown_points
 
-    price_per_m2_score = _score_from_bands(
+    price_per_m2_score = _interpolate_score(
         calculated_price_per_m2,
-        config.hard_scoring.price_per_m2.bands,
+        config.hard_scoring.price_per_m2.anchors,
     )
 
-    size_score = _score_from_bands(
+    size_score = _interpolate_score(
         record.get("area_m2_value"),
-        config.hard_scoring.size.bands,
+        config.hard_scoring.size.anchors,
+        below_first_points=config.hard_scoring.size.below_min_points,
     )
 
-    maintenance_fee_score = _score_maintenance_fee(
-        record.get("maintenance_fee_value"),
-        config.hard_scoring.maintenance_fee.best_fee_threshold,
-        config.hard_scoring.maintenance_fee.worst_fee_threshold,
+    maintenance_fee_score = _score_maintenance_fee_per_m2(
+        maintenance_fee_per_m2,
+        config.hard_scoring.maintenance_fee.best_fee_per_m2,
+        config.hard_scoring.maintenance_fee.worst_fee_per_m2,
         config.hard_scoring.maintenance_fee.max_points,
         config.hard_scoring.maintenance_fee.min_points,
     )
+
+    metro_score = _normalized_transit_mode_score(record.get("metro_score"))
+    tram_score = _normalized_transit_mode_score(record.get("tram_score"))
+    rail_score = _normalized_transit_mode_score(record.get("rail_score"))
+    transit_base = max(metro_score, tram_score, rail_score)
+    strong_modes = sum(
+        1
+        for score in (metro_score, tram_score, rail_score)
+        if score >= config.hard_scoring.transit.strong_score_threshold
+    )
+    multimodal_bonus = (
+        config.hard_scoring.transit.multimodal_bonus
+        if strong_modes >= 2
+        else 0.0
+    )
+    transit_score = transit_base + multimodal_bonus
 
     floor_current = record.get("floor_current")
     if isinstance(floor_current, int):
@@ -204,15 +260,18 @@ def compute_hard_scores(
     else:
         floor_score = config.hard_scoring.floor.unknown_floor_points
 
+    value_score = price_per_m2_score + size_score
+    technical_risk_score = building_age_score
+
     if disqualified:
         hard_total_score = room_gate_cfg.fail_score
     else:
         hard_total_score = (
-            building_age_score
+            value_score
             + plot_ownership_score
-            + price_per_m2_score
-            + size_score
             + maintenance_fee_score
+            + technical_risk_score
+            + transit_score
             + floor_score
         )
 
@@ -223,8 +282,16 @@ def compute_hard_scores(
         plot_ownership_score=_round_score(plot_ownership_score),
         price_per_m2_score=_round_score(price_per_m2_score),
         size_score=_round_score(size_score),
+        maintenance_fee_per_m2=maintenance_fee_per_m2,
         maintenance_fee_score=_round_score(maintenance_fee_score),
+        metro_score=_round_score(metro_score),
+        tram_score=_round_score(tram_score),
+        rail_score=_round_score(rail_score),
+        transit_score=_round_score(transit_score),
+        multimodal_bonus=_round_score(multimodal_bonus),
         floor_score=_round_score(floor_score),
+        value_score=_round_score(value_score),
+        technical_risk_score=_round_score(technical_risk_score),
         hard_total_score=_round_score(hard_total_score),
         disqualified=disqualified,
         disqualification_reason=disqualification_reason,

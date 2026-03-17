@@ -46,15 +46,14 @@ class RoomGateConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class ScoreBandConfig:
-    min_value: float | None
-    max_value: float | None
+class ScoreAnchorConfig:
+    value: float
     points: float
 
 
 @dataclass(frozen=True, slots=True)
 class BuildingAgeConfig:
-    bands: tuple[ScoreBandConfig, ...]
+    anchors: tuple[ScoreAnchorConfig, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,12 +65,13 @@ class PlotOwnershipConfig:
 
 @dataclass(frozen=True, slots=True)
 class PricePerM2Config:
-    bands: tuple[ScoreBandConfig, ...]
+    anchors: tuple[ScoreAnchorConfig, ...]
 
 
 @dataclass(frozen=True, slots=True)
 class SizeConfig:
-    bands: tuple[ScoreBandConfig, ...]
+    anchors: tuple[ScoreAnchorConfig, ...]
+    below_min_points: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,10 +83,16 @@ class FloorConfig:
 
 @dataclass(frozen=True, slots=True)
 class MaintenanceFeeConfig:
-    best_fee_threshold: float
-    worst_fee_threshold: float
+    best_fee_per_m2: float
+    worst_fee_per_m2: float
     max_points: float
     min_points: float
+
+
+@dataclass(frozen=True, slots=True)
+class TransitConfig:
+    strong_score_threshold: float
+    multimodal_bonus: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,18 +103,14 @@ class HardScoringConfig:
     price_per_m2: PricePerM2Config
     size: SizeConfig
     maintenance_fee: MaintenanceFeeConfig
+    transit: TransitConfig
     floor: FloorConfig
 
 
 @dataclass(frozen=True, slots=True)
-class SimpleMaxPointsConfig:
+class ScoreRangeConfig:
+    min_points: float
     max_points: float
-
-
-@dataclass(frozen=True, slots=True)
-class CommuteConfig:
-    max_points: float
-    penalty_per_extra_10_minutes: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,8 +121,7 @@ class ConfidenceConfig:
 
 @dataclass(frozen=True, slots=True)
 class LLMScoringConfig:
-    renovations: SimpleMaxPointsConfig
-    commute: CommuteConfig
+    renovations: ScoreRangeConfig
     confidence: ConfidenceConfig
 
 
@@ -168,17 +169,16 @@ def _resolve_path(project_root: Path, value: str) -> Path:
     return (project_root / path).resolve()
 
 
-def _load_score_bands(values: list[dict]) -> tuple[ScoreBandConfig, ...]:
-    bands: list[ScoreBandConfig] = []
+def _load_score_anchors(values: list[dict]) -> tuple[ScoreAnchorConfig, ...]:
+    anchors: list[ScoreAnchorConfig] = []
     for item in values:
-        bands.append(
-            ScoreBandConfig(
-                min_value=float(item["min_value"]) if item.get("min_value") is not None else None,
-                max_value=float(item["max_value"]) if item.get("max_value") is not None else None,
+        anchors.append(
+            ScoreAnchorConfig(
+                value=float(item["value"]),
                 points=float(item["points"]),
             )
         )
-    return tuple(bands)
+    return tuple(sorted(anchors, key=lambda anchor: anchor.value))
 
 
 def load_apartment_analysis_config(
@@ -237,7 +237,7 @@ def load_apartment_analysis_config(
                 unknown_rooms_action=str(hard_raw["room_gate"]["unknown_rooms_action"]),
             ),
             building_age=BuildingAgeConfig(
-                bands=_load_score_bands(hard_raw["building_age"]["bands"]),
+                anchors=_load_score_anchors(hard_raw["building_age"]["anchors"]),
             ),
             plot_ownership=PlotOwnershipConfig(
                 owned_points=float(hard_raw["plot_ownership"]["owned_points"]),
@@ -245,16 +245,21 @@ def load_apartment_analysis_config(
                 unknown_points=float(hard_raw["plot_ownership"]["unknown_points"]),
             ),
             price_per_m2=PricePerM2Config(
-                bands=_load_score_bands(hard_raw["price_per_m2"]["bands"]),
+                anchors=_load_score_anchors(hard_raw["price_per_m2"]["anchors"]),
             ),
             size=SizeConfig(
-                bands=_load_score_bands(hard_raw["size"]["bands"]),
+                anchors=_load_score_anchors(hard_raw["size"]["anchors"]),
+                below_min_points=float(hard_raw["size"]["below_min_points"]),
             ),
             maintenance_fee=MaintenanceFeeConfig(
-                best_fee_threshold=float(hard_raw["maintenance_fee"]["best_fee_threshold"]),
-                worst_fee_threshold=float(hard_raw["maintenance_fee"]["worst_fee_threshold"]),
+                best_fee_per_m2=float(hard_raw["maintenance_fee"]["best_fee_per_m2"]),
+                worst_fee_per_m2=float(hard_raw["maintenance_fee"]["worst_fee_per_m2"]),
                 max_points=float(hard_raw["maintenance_fee"]["max_points"]),
                 min_points=float(hard_raw["maintenance_fee"]["min_points"]),
+            ),
+            transit=TransitConfig(
+                strong_score_threshold=float(hard_raw["transit"]["strong_score_threshold"]),
+                multimodal_bonus=float(hard_raw["transit"]["multimodal_bonus"]),
             ),
             floor=FloorConfig(
                 first_floor_points=float(hard_raw["floor"]["first_floor_points"]),
@@ -263,14 +268,9 @@ def load_apartment_analysis_config(
             ),
         ),
         llm_scoring=LLMScoringConfig(
-            renovations=SimpleMaxPointsConfig(
-                max_points=float(llm_raw["renovations"]["max_points"])
-            ),
-            commute=CommuteConfig(
-                max_points=float(llm_raw["commute"]["max_points"]),
-                penalty_per_extra_10_minutes=float(
-                    llm_raw["commute"]["penalty_per_extra_10_minutes"]
-                ),
+            renovations=ScoreRangeConfig(
+                min_points=float(llm_raw["renovations"]["min_points"]),
+                max_points=float(llm_raw["renovations"]["max_points"]),
             ),
             confidence=ConfidenceConfig(
                 min_allowed=float(llm_raw["confidence"]["min_allowed"]),

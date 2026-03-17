@@ -18,9 +18,32 @@ DEFAULT_METRO_WALKING_SCORE_BANDS: tuple[
 ] = (
     (None, 10.0, 2, True, False),
     (10.0, 15.0, 1, True, True),
-    (15.0, 30.0, 0, False, True),
-    (30.0, None, -1, False, True),
+    (15.0, None, 0, False, True),
 )
+DEFAULT_TRAM_WALKING_SCORE_BANDS: tuple[
+    tuple[float | None, float | None, int, bool, bool],
+    ...,
+] = (
+    (None, 5.0, 2, True, False),
+    (5.0, 10.0, 1, True, True),
+    (10.0, None, 0, False, True),
+)
+DEFAULT_RAIL_WALKING_SCORE_BANDS: tuple[
+    tuple[float | None, float | None, int, bool, bool],
+    ...,
+] = (
+    (None, 10.0, 2, True, False),
+    (10.0, 20.0, 1, True, True),
+    (20.0, None, 0, False, True),
+)
+DEFAULT_WALKING_SCORE_BANDS_BY_CATEGORY: dict[
+    POICategory,
+    tuple[tuple[float | None, float | None, int, bool, bool], ...],
+] = {
+    POICategory.METRO_STATION: DEFAULT_METRO_WALKING_SCORE_BANDS,
+    POICategory.TRAM_STOP: DEFAULT_TRAM_WALKING_SCORE_BANDS,
+    POICategory.RAIL_STATION: DEFAULT_RAIL_WALKING_SCORE_BANDS,
+}
 
 
 def score_distance_to_poi(
@@ -51,6 +74,24 @@ def score_distance_to_poi(
 
 def score_metro_walking_minutes(minutes: float | None) -> int | None:
     return score_distance_to_poi(minutes, DEFAULT_METRO_WALKING_SCORE_BANDS)
+
+
+def score_tram_walking_minutes(minutes: float | None) -> int | None:
+    return score_distance_to_poi(minutes, DEFAULT_TRAM_WALKING_SCORE_BANDS)
+
+
+def score_rail_walking_minutes(minutes: float | None) -> int | None:
+    return score_distance_to_poi(minutes, DEFAULT_RAIL_WALKING_SCORE_BANDS)
+
+
+def score_poi_walking_minutes(
+    category: POICategory,
+    minutes: float | None,
+) -> int | None:
+    score_bands = DEFAULT_WALKING_SCORE_BANDS_BY_CATEGORY.get(category)
+    if score_bands is None:
+        return None
+    return score_distance_to_poi(minutes, score_bands)
 
 
 class POIService:

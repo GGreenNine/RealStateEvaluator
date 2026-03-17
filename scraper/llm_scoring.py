@@ -19,14 +19,12 @@ class LLMScoringError(RuntimeError):
 
 
 class LLMDerivedAssumptions(BaseModel):
-    estimated_commute_minutes_to_helsinki_center: float | None
     repair_risk_level: str
 
 
 class LLMScorePayload(BaseModel):
     listing_id: str | None
     renovations_score: float
-    commute_score: float
     llm_total_score: float
     confidence: float
     recommendation: str
@@ -35,12 +33,17 @@ class LLMScorePayload(BaseModel):
     derived_assumptions: LLMDerivedAssumptions
 
 
-def _validate_score(name: str, value: Any, max_points: float) -> float:
+def _validate_score(
+    name: str,
+    value: Any,
+    min_points: float,
+    max_points: float,
+) -> float:
     if not isinstance(value, (int, float)):
         raise LLMScoringError(f"{name} must be numeric")
     normalized = round(float(value), 2)
-    if normalized < 0 or normalized > max_points:
-        raise LLMScoringError(f"{name} must be between 0 and {max_points}")
+    if normalized < min_points or normalized > max_points:
+        raise LLMScoringError(f"{name} must be between {min_points} and {max_points}")
     return normalized
 
 
@@ -48,18 +51,11 @@ def _validate_payload(payload: Mapping[str, Any], config: ApartmentAnalysisConfi
     renovations_score = _validate_score(
         "renovations_score",
         payload.get("renovations_score"),
+        config.llm_scoring.renovations.min_points,
         config.llm_scoring.renovations.max_points,
     )
-    commute_score = _validate_score(
-        "commute_score",
-        payload.get("commute_score"),
-        config.llm_scoring.commute.max_points,
-    )
 
-    llm_total_score = round(
-        renovations_score + commute_score,
-        2,
-    )
+    llm_total_score = round(renovations_score, 2)
     returned_total = payload.get("llm_total_score")
     if not isinstance(returned_total, (int, float)):
         raise LLMScoringError("llm_total_score must be numeric")
@@ -94,7 +90,6 @@ def _validate_payload(payload: Mapping[str, Any], config: ApartmentAnalysisConfi
     return LLMScoreResult(
         listing_id=payload.get("listing_id"),
         renovations_score=renovations_score,
-        commute_score=commute_score,
         llm_total_score=llm_total_score,
         confidence=confidence_value,
         recommendation=recommendation,
@@ -134,7 +129,6 @@ class OpenAILLMScorer:
             "reasoning": {"effort": "minimal"},
             "text": {"verbosity": "low"},
         }
-        # GPT-5 models currently reject temperature on the Responses API.
         if not self.config.openai.model.lower().startswith("gpt-5"):
             request_payload["temperature"] = self.config.openai.temperature
 

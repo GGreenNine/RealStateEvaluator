@@ -16,8 +16,8 @@ from .base import BasePOIProvider
 LOGGER = logging.getLogger(__name__)
 
 DEFAULT_DIGITRANSIT_GRAPHQL_URL = "https://api.digitransit.fi/routing/v2/hsl/gtfs/v1"
-METRO_STATIONS_QUERY = """
-query MetroStations {
+STATIONS_QUERY = """
+query StationsForPoiCategories {
   stations {
     gtfsId
     name
@@ -26,6 +26,24 @@ query MetroStations {
     stops {
       gtfsId
       vehicleMode
+      lat
+      lon
+    }
+  }
+}
+""".strip()
+STOPS_QUERY = """
+query StopsForPoiCategories {
+  stops {
+    gtfsId
+    name
+    lat
+    lon
+    vehicleMode
+    code
+    parentStation {
+      gtfsId
+      name
       lat
       lon
     }
@@ -87,15 +105,49 @@ class DigitransitPOIProvider(BasePOIProvider):
         self.session.close()
 
     def fetch(self, category: POICategory) -> list[PointOfInterest]:
-        if category is not POICategory.METRO_STATION:
-            raise NotImplementedError(
-                f"Digitransit metro provider does not yet support {category.value}"
-            )
-        payload = self._post_graphql(METRO_STATIONS_QUERY)
+        if category is POICategory.METRO_STATION:
+            return self.fetch_metro_stations()
+        if category is POICategory.TRAM_STOP:
+            return self.fetch_tram_stops()
+        if category is POICategory.RAIL_STATION:
+            return self.fetch_rail_stations()
+        raise NotImplementedError(
+            f"Digitransit provider does not yet support {category.value}"
+        )
+
+    def fetch_metro_stations(self) -> list[PointOfInterest]:
+        stations = self._fetch_stations()
+        return self._normalize_station_category(
+            stations=stations,
+            category=POICategory.METRO_STATION,
+            required_mode="SUBWAY",
+        )
+
+    def fetch_tram_stops(self) -> list[PointOfInterest]:
+        stops = self._fetch_stops()
+        return self._normalize_tram_stops(stops)
+
+    def fetch_rail_stations(self) -> list[PointOfInterest]:
+        stations = self._fetch_stations()
+        return self._normalize_station_category(
+            stations=stations,
+            category=POICategory.RAIL_STATION,
+            required_mode="RAIL",
+        )
+
+    def _fetch_stations(self) -> list[dict[str, Any]]:
+        payload = self._post_graphql(STATIONS_QUERY)
         stations = payload.get("data", {}).get("stations", [])
         if not isinstance(stations, list):
             raise RuntimeError("Unexpected Digitransit response: stations is not a list")
-        return self._normalize_metro_stations(stations)
+        return stations
+
+    def _fetch_stops(self) -> list[dict[str, Any]]:
+        payload = self._post_graphql(STOPS_QUERY)
+        stops = payload.get("data", {}).get("stops", [])
+        if not isinstance(stops, list):
+            raise RuntimeError("Unexpected Digitransit response: stops is not a list")
+        return stops
 
     def _post_graphql(self, query: str) -> dict[str, Any]:
         response = self.session.post(
@@ -121,9 +173,11 @@ class DigitransitPOIProvider(BasePOIProvider):
             raise RuntimeError(f"Digitransit GraphQL returned errors: {errors}")
         return payload
 
-    def _normalize_metro_stations(
+    def _normalize_station_category(
         self,
         stations: list[dict[str, Any]],
+        category: POICategory,
+        required_mode: str,
     ) -> list[PointOfInterest]:
         normalized: list[PointOfInterest] = []
         seen_ids: set[str] = set()
@@ -140,7 +194,7 @@ class DigitransitPOIProvider(BasePOIProvider):
                     if isinstance(stop, dict) and stop.get("vehicleMode")
                 }
             )
-            if "SUBWAY" not in stop_modes:
+            if required_mode not in stop_modes:
                 continue
 
             station_id = station.get("gtfsId")
@@ -170,16 +224,72 @@ class DigitransitPOIProvider(BasePOIProvider):
                     name=str(station.get("name") or station_id),
                     lat=lat,
                     lon=lon,
-                    category=POICategory.METRO_STATION.value,
+                    category=category.value,
                     source=self.source_name,
                     raw_modes=stop_modes,
                     stop_ids=stop_ids,
                     metadata={
+                        "normalization_level": "station",
                         "stop_count": len(stop_ids),
                     },
                 )
             )
             seen_ids.add(station_id)
+
+        normalized.sort(key=lambda item: item.name.casefold())
+        return normalized
+
+    def _normalize_tram_stops(
+        self,
+        stops: list[dict[str, Any]],
+    ) -> list[PointOfInterest]:
+        normalized: list[PointOfInterest] = []
+        seen_ids: set[str] = set()
+
+        for stop in stops:
+            if not isinstance(stop, dict):
+                continue
+            vehicle_mode = str(stop.get("vehicleMode") or "").upper()
+            if vehicle_mode != "TRAM":
+                continue
+
+            stop_id = stop.get("gtfsId")
+            if not stop_id:
+                continue
+            stop_id = str(stop_id)
+            if stop_id in seen_ids:
+                continue
+
+            lat = normalize_coordinate(stop.get("lat"))
+            lon = normalize_coordinate(stop.get("lon"))
+            if lat is None or lon is None:
+                continue
+
+            parent_station = stop.get("parentStation")
+            metadata: dict[str, Any] = {
+                "normalization_level": "stop",
+                "code": stop.get("code"),
+            }
+            if isinstance(parent_station, dict) and parent_station.get("gtfsId"):
+                metadata["parent_station_id"] = str(parent_station.get("gtfsId"))
+                metadata["parent_station_name"] = str(
+                    parent_station.get("name") or parent_station.get("gtfsId")
+                )
+
+            normalized.append(
+                PointOfInterest(
+                    id=stop_id,
+                    name=str(stop.get("name") or stop_id),
+                    lat=lat,
+                    lon=lon,
+                    category=POICategory.TRAM_STOP.value,
+                    source=self.source_name,
+                    raw_modes=["TRAM"],
+                    stop_ids=[stop_id],
+                    metadata=metadata,
+                )
+            )
+            seen_ids.add(stop_id)
 
         normalized.sort(key=lambda item: item.name.casefold())
         return normalized

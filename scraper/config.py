@@ -38,8 +38,13 @@ class ScraperConfig:
     retry_backoff_factor: float = 1.0
     retry_statuses: tuple[int, ...] = (403, 429, 500, 502, 503, 504)
     enable_poi_enrichment: bool = True
+    enable_metro_enrichment: bool = True
+    enable_tram_enrichment: bool = True
+    enable_rail_enrichment: bool = True
     poi_data_dir: Path = Path("data/poi")
     metro_data_path: Path = Path("data/poi/metro_stations.json")
+    tram_data_path: Path = Path("data/poi/tram_stops.json")
+    rail_data_path: Path = Path("data/poi/rail_stations.json")
     walking_detour_factor: float = 1.2
     walking_speed_m_per_min: float = 80.0
     headers: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_HEADERS))

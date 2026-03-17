@@ -8,6 +8,7 @@ from typing import Any
 class DerivedAnalysisFields:
     normalized_rooms: int | None
     calculated_price_per_m2: float | None
+    maintenance_fee_per_m2: float | None
     input_hash: str
 
     def to_dict(self) -> dict[str, Any]:
@@ -22,8 +23,16 @@ class HardScoreResult:
     plot_ownership_score: float
     price_per_m2_score: float
     size_score: float
+    maintenance_fee_per_m2: float | None
     maintenance_fee_score: float
+    metro_score: float
+    tram_score: float
+    rail_score: float
+    transit_score: float
+    multimodal_bonus: float
     floor_score: float
+    value_score: float
+    technical_risk_score: float
     hard_total_score: float
     disqualified: bool
     disqualification_reason: str | None = None
@@ -37,7 +46,6 @@ class HardScoreResult:
 class LLMScoreResult:
     listing_id: str | None
     renovations_score: float
-    commute_score: float
     llm_total_score: float
     confidence: float
     recommendation: str
@@ -61,6 +69,7 @@ class ApartmentScoreRecord:
     llm_input_payload: dict[str, Any] | None
     derived_fields: dict[str, Any]
     hard_scores: dict[str, Any]
+    category_scores: dict[str, float]
     llm_scores: dict[str, Any] | None
     hard_total_score: float
     llm_total_score: float

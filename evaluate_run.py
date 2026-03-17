@@ -55,14 +55,12 @@ def _zero_llm_score(listing_id: str | None, summary: str) -> LLMScoreResult:
     return LLMScoreResult(
         listing_id=listing_id,
         renovations_score=0.0,
-        commute_score=0.0,
         llm_total_score=0.0,
         confidence=1.0,
         recommendation="reject",
         summary=summary,
         reasoning_notes=[summary],
         derived_assumptions={
-            "estimated_commute_minutes_to_helsinki_center": None,
             "repair_risk_level": "unknown",
         },
     )
@@ -169,10 +167,26 @@ def main() -> int:
                     "LLM scoring failed; scores set to zero for this run.",
                 )
 
+        category_scores = {
+            "value_score": hard_scores.value_score,
+            "technical_risk_score": round(
+                hard_scores.technical_risk_score + llm_scores.renovations_score,
+                2,
+            ),
+            "transit_score": hard_scores.transit_score,
+        }
         final_total_score = (
             0.0
             if hard_scores.disqualified
-            else round(hard_scores.hard_total_score + llm_scores.llm_total_score, 2)
+            else round(
+                category_scores["value_score"]
+                + category_scores["technical_risk_score"]
+                + category_scores["transit_score"]
+                + hard_scores.plot_ownership_score
+                + hard_scores.maintenance_fee_score
+                + hard_scores.floor_score,
+                2,
+            )
         )
 
         scored_record = ApartmentScoreRecord(
@@ -186,6 +200,7 @@ def main() -> int:
             llm_input_payload=llm_input_payload,
             derived_fields=derived.to_dict(),
             hard_scores=hard_scores.to_dict(),
+            category_scores=category_scores,
             llm_scores=llm_scores.to_dict(),
             hard_total_score=hard_scores.hard_total_score,
             llm_total_score=llm_scores.llm_total_score,

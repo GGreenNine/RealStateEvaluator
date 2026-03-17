@@ -16,6 +16,8 @@ from scraper.utils import parse_bool, utcnow_iso
 LOGGER = logging.getLogger(__name__)
 COMMAND_SCRAPE = "scrape"
 COMMAND_FETCH_METRO = "fetch-metro-stations"
+COMMAND_FETCH_TRAM = "fetch-tram-stops"
+COMMAND_FETCH_RAIL = "fetch-rail-stations"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -29,6 +31,18 @@ def build_parser() -> argparse.ArgumentParser:
         subparsers.add_parser(
             COMMAND_FETCH_METRO,
             help="Fetch metro stations from Digitransit and save them locally.",
+        )
+    )
+    build_fetch_tram_parser(
+        subparsers.add_parser(
+            COMMAND_FETCH_TRAM,
+            help="Fetch tram stops from Digitransit and save them locally.",
+        )
+    )
+    build_fetch_rail_parser(
+        subparsers.add_parser(
+            COMMAND_FETCH_RAIL,
+            help="Fetch rail stations from Digitransit and save them locally.",
         )
     )
     return parser
@@ -112,6 +126,34 @@ def build_scrape_parser(parser: argparse.ArgumentParser) -> None:
         help="Path to the local metro stations JSON file.",
     )
     parser.add_argument(
+        "--tram-data-path",
+        default="data/poi/tram_stops.json",
+        help="Path to the local tram stops JSON file.",
+    )
+    parser.add_argument(
+        "--rail-data-path",
+        default="data/poi/rail_stations.json",
+        help="Path to the local rail stations JSON file.",
+    )
+    parser.add_argument(
+        "--enable-metro-enrichment",
+        type=parse_bool,
+        default=True,
+        help="Enable nearest metro enrichment from local POI data.",
+    )
+    parser.add_argument(
+        "--enable-tram-enrichment",
+        type=parse_bool,
+        default=True,
+        help="Enable nearest tram enrichment from local POI data.",
+    )
+    parser.add_argument(
+        "--enable-rail-enrichment",
+        type=parse_bool,
+        default=True,
+        help="Enable nearest rail enrichment from local POI data.",
+    )
+    parser.add_argument(
         "--walking-detour-factor",
         type=float,
         default=1.2,
@@ -125,11 +167,18 @@ def build_scrape_parser(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def build_fetch_metro_parser(parser: argparse.ArgumentParser) -> None:
+def _build_fetch_poi_parser(
+    parser: argparse.ArgumentParser,
+    default_filename: str,
+    noun: str,
+) -> None:
     parser.add_argument(
         "--output",
         default=None,
-        help="Where to save the local metro stations JSON file. Defaults to <poi-data-dir>/metro_stations.json.",
+        help=(
+            f"Where to save the local {noun} JSON file. "
+            f"Defaults to <poi-data-dir>/{default_filename}."
+        ),
     )
     parser.add_argument(
         "--poi-data-dir",
@@ -171,6 +220,18 @@ def build_fetch_metro_parser(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def build_fetch_metro_parser(parser: argparse.ArgumentParser) -> None:
+    _build_fetch_poi_parser(parser, "metro_stations.json", "metro stations")
+
+
+def build_fetch_tram_parser(parser: argparse.ArgumentParser) -> None:
+    _build_fetch_poi_parser(parser, "tram_stops.json", "tram stops")
+
+
+def build_fetch_rail_parser(parser: argparse.ArgumentParser) -> None:
+    _build_fetch_poi_parser(parser, "rail_stations.json", "rail stations")
+
+
 def configure_logging(debug: bool) -> None:
     level = logging.DEBUG if debug else logging.INFO
     logging.basicConfig(
@@ -183,7 +244,14 @@ def configure_logging(debug: bool) -> None:
 def normalize_argv(argv: list[str]) -> list[str]:
     if not argv:
         return argv
-    known_commands = {COMMAND_SCRAPE, COMMAND_FETCH_METRO, "-h", "--help"}
+    known_commands = {
+        COMMAND_SCRAPE,
+        COMMAND_FETCH_METRO,
+        COMMAND_FETCH_TRAM,
+        COMMAND_FETCH_RAIL,
+        "-h",
+        "--help",
+    }
     if argv[0] not in known_commands:
         return [COMMAND_SCRAPE, *argv]
     return argv
@@ -204,8 +272,13 @@ def run_scrape(args: argparse.Namespace) -> int:
         stop_on_error=args.stop_on_error,
         save_debug_html=args.save_debug_html,
         enable_poi_enrichment=args.enable_poi_enrichment,
+        enable_metro_enrichment=args.enable_metro_enrichment,
+        enable_tram_enrichment=args.enable_tram_enrichment,
+        enable_rail_enrichment=args.enable_rail_enrichment,
         poi_data_dir=Path(args.poi_data_dir),
         metro_data_path=Path(args.metro_data_path),
+        tram_data_path=Path(args.tram_data_path),
+        rail_data_path=Path(args.rail_data_path),
         walking_detour_factor=args.walking_detour_factor,
         walking_speed_m_per_min=args.walking_speed_m_per_min,
     )
@@ -254,7 +327,7 @@ def run_scrape(args: argparse.Namespace) -> int:
     return 0
 
 
-def run_fetch_metro_stations(args: argparse.Namespace) -> int:
+def run_fetch_poi(args: argparse.Namespace, category: POICategory) -> int:
     repository = POIRepository(base_dir=Path(args.poi_data_dir))
     default_provider_config = DigitransitProviderConfig()
     provider_config = DigitransitProviderConfig(
@@ -269,29 +342,29 @@ def run_fetch_metro_stations(args: argparse.Namespace) -> int:
     provider = DigitransitPOIProvider(provider_config)
 
     try:
-        items = provider.fetch(POICategory.METRO_STATION)
+        items = provider.fetch(category)
     except Exception:
-        LOGGER.exception("Failed to fetch metro stations from Digitransit.")
+        LOGGER.exception("Failed to fetch %s from Digitransit.", category.value)
         return 1
     finally:
         provider.close()
 
     collection = POICollection(
         source=provider.source_name,
-        object_type=POICategory.METRO_STATION.value,
+        object_type=category.value,
         fetched_at=utcnow_iso(),
         items=items,
     )
     output_path = repository.save_collection(
         collection,
-        Path(args.output) if args.output else repository.path_for_category(POICategory.METRO_STATION),
+        Path(args.output) if args.output else repository.path_for_category(category),
     )
 
-    LOGGER.info("Saved %s metro stations to %s", len(items), output_path)
+    LOGGER.info("Saved %s %s to %s", len(items), category.value, output_path)
     json.dump(
         {
             "source": provider.source_name,
-            "object_type": POICategory.METRO_STATION.value,
+            "object_type": category.value,
             "count": len(items),
             "output": str(output_path),
         },
@@ -310,7 +383,11 @@ def main(argv: list[str] | None = None) -> int:
     configure_logging(getattr(args, "debug", False))
 
     if args.command == COMMAND_FETCH_METRO:
-        return run_fetch_metro_stations(args)
+        return run_fetch_poi(args, POICategory.METRO_STATION)
+    if args.command == COMMAND_FETCH_TRAM:
+        return run_fetch_poi(args, POICategory.TRAM_STOP)
+    if args.command == COMMAND_FETCH_RAIL:
+        return run_fetch_poi(args, POICategory.RAIL_STATION)
     if args.command == COMMAND_SCRAPE:
         return run_scrape(args)
 

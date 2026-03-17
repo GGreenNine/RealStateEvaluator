@@ -16,7 +16,7 @@ from .parsers import (
     parse_listing_details,
     parse_total_pages,
 )
-from .poi import POICategory, POIRepository, POIService, score_metro_walking_minutes
+from .poi import POICategory, POIRepository, POIService, score_poi_walking_minutes
 from .state import apply_state, load_state, save_state
 from .storage import save_text
 from .utils import utcnow_iso
@@ -266,7 +266,7 @@ class OikotieScraper:
                     card=card,
                 )
                 record = ListingRecord(**details.to_dict(), card=card.to_dict())
-                self._enrich_record_with_metro(record)
+                self._enrich_record_with_pois(record)
                 records.append(record)
             except Exception as exc:
                 self._register_error(card.url, f"listing_parse_failed: {exc}")
@@ -295,28 +295,88 @@ class OikotieScraper:
 
         return records
 
-    def _enrich_record_with_metro(self, record: ListingRecord) -> None:
+    def _enrich_record_with_pois(self, record: ListingRecord) -> None:
         if not self.config.enable_poi_enrichment:
             return
 
-        nearest_metro = self.poi_service.find_nearest_poi(
+        enrichments = (
+            (
+                POICategory.METRO_STATION,
+                self.config.enable_metro_enrichment,
+                self.config.metro_data_path,
+                {
+                    "id": "nearest_metro_station_id",
+                    "name": "nearest_metro_station_name",
+                    "distance": "nearest_metro_distance_meters",
+                    "walking_minutes": "nearest_metro_walking_minutes",
+                },
+                "metro_score",
+            ),
+            (
+                POICategory.TRAM_STOP,
+                self.config.enable_tram_enrichment,
+                self.config.tram_data_path,
+                {
+                    "id": "nearest_tram_stop_id",
+                    "name": "nearest_tram_stop_name",
+                    "distance": "nearest_tram_stop_distance_meters",
+                    "walking_minutes": "nearest_tram_stop_walking_minutes",
+                },
+                "tram_score",
+            ),
+            (
+                POICategory.RAIL_STATION,
+                self.config.enable_rail_enrichment,
+                self.config.rail_data_path,
+                {
+                    "id": "nearest_rail_station_id",
+                    "name": "nearest_rail_station_name",
+                    "distance": "nearest_rail_station_distance_meters",
+                    "walking_minutes": "nearest_rail_station_walking_minutes",
+                },
+                "rail_score",
+            ),
+        )
+        for category, enabled, path, field_names, score_field in enrichments:
+            if not enabled:
+                continue
+            self._enrich_record_with_category(
+                record=record,
+                category=category,
+                path=path,
+                field_names=field_names,
+                score_field=score_field,
+            )
+
+    def _enrich_record_with_category(
+        self,
+        record: ListingRecord,
+        category: POICategory,
+        path: Path,
+        field_names: dict[str, str],
+        score_field: str,
+    ) -> None:
+        nearest = self.poi_service.find_nearest_poi(
             lat=record.latitude,
             lon=record.longitude,
-            category=POICategory.METRO_STATION,
-            path=self.config.metro_data_path,
+            category=category,
+            path=path,
         )
-        if nearest_metro is None:
+        if nearest is None:
             return
 
-        record.nearest_metro_station_id = nearest_metro.poi.id
-        record.nearest_metro_station_name = nearest_metro.poi.name
-        record.nearest_metro_distance_meters = round(nearest_metro.distance_meters, 1)
-        record.nearest_metro_walking_minutes = round(
-            nearest_metro.walking_minutes_estimate,
-            1,
+        setattr(record, field_names["id"], nearest.poi.id)
+        setattr(record, field_names["name"], nearest.poi.name)
+        setattr(record, field_names["distance"], round(nearest.distance_meters, 1))
+        setattr(
+            record,
+            field_names["walking_minutes"],
+            round(nearest.walking_minutes_estimate, 1),
         )
-        record.metro_score = score_metro_walking_minutes(
-            nearest_metro.walking_minutes_estimate
+        setattr(
+            record,
+            score_field,
+            score_poi_walking_minutes(category, nearest.walking_minutes_estimate),
         )
 
     def _register_error(self, url: str, message: str) -> None:
